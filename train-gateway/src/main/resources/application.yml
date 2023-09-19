@@ -1,0 +1,12 @@
+server:
+  port: 8000
+spring:
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      routes:
+      - id: member
+        uri: http://localhost:8001
+        predicates:
+          - Path=/member/**

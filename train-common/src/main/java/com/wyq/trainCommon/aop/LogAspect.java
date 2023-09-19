@@ -1,4 +1,4 @@
-package com.wyq.trainMember.aop;
+package com.wyq.trainCommon.aop;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.support.spring.PropertyPreFilters;
@@ -31,7 +31,7 @@ public class LogAspect {
     /**
      * 定义一个切点
      */
-    @Pointcut("execution(public * com.wyq.*controller.*(..))")
+    @Pointcut("execution(* com.wyq..controller.*.*(..))")
     public void controllerPointcut() {
     }
 
