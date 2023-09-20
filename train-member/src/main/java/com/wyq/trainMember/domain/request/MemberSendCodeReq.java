@@ -1,10 +1,12 @@
 package com.wyq.trainMember.domain.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
-public class MemberRegisterReq {
+public class MemberSendCodeReq {
 
-    @NotBlank(message = "手机号不能为空")
+    @NotBlank(message = "【手机号】不能为空")
+    @Pattern(regexp = "^1[3456789]\\d{9}$", message = "手机号码格式错误")
     private String mobile;
 
     public String getMobile() {
@@ -17,7 +19,7 @@ public class MemberRegisterReq {
 
     @Override
     public String toString() {
-        return "MemberRegisterReq{" +
+        return "MemberSendCodeReq{" +
                 "mobile='" + mobile + '\'' +
                 '}';
     }
