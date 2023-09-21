@@ -1,7 +1,11 @@
 package com.wyq.trainMember.controller;
 
+import com.wyq.trainCommon.context.LoginMemberContext;
 import com.wyq.trainCommon.response.CommonResp;
+import com.wyq.trainCommon.response.PageResp;
+import com.wyq.trainMember.domain.request.PassengerQueryReq;
 import com.wyq.trainMember.domain.request.PassengerSaveReq;
+import com.wyq.trainMember.domain.response.PassengerQueryResp;
 import com.wyq.trainMember.service.PassengerService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
@@ -20,5 +24,17 @@ public class PassengerController {
         return new CommonResp<>();
     }
 
+    @GetMapping("/query-list")
+    public CommonResp<PageResp<PassengerQueryResp>> queryList(@Valid PassengerQueryReq req) {
+        req.setMemberId(LoginMemberContext.getId());
+        PageResp<PassengerQueryResp> list = passengerService.queryList(req);
+        return new CommonResp<>(list);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public CommonResp<Object> delete(@PathVariable Long id) {
+        passengerService.delete(id);
+        return new CommonResp<>();
+    }
 
 }
