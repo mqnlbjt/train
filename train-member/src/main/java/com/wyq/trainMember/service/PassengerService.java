@@ -5,6 +5,8 @@ import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.ObjectUtil;
 import com.wyq.trainCommon.context.LoginMemberContext;
+import com.wyq.trainCommon.exception.BusinessException;
+import com.wyq.trainCommon.exception.BusinessExceptionEnum;
 import com.wyq.trainCommon.utils.SnowUtil;
 import com.wyq.trainMember.domain.entity.Passenger;
 import com.wyq.trainMember.domain.entity.PassengerExample;
@@ -29,27 +31,35 @@ public class PassengerService {
     public void save(PassengerSaveReq req) {
         DateTime now = DateTime.now();
         Passenger passenger = BeanUtil.copyProperties(req, Passenger.class);
-
-        Passenger passengerDB = getPassenger(passenger.getId());
-        if (ObjectUtil.isNotEmpty(passengerDB)) {
-            passenger.setUpdateTime(now);
-            passengerMapper.updateByPrimaryKey(passenger);
-        } else {
-            passenger.setMemberId(LoginMemberContext.getId());
+        passenger.setMemberId(LoginMemberContext.getId());
+        Passenger passengerDB = getPassenger(passenger);
+        if (passengerDB == null) {
             passenger.setId(SnowUtil.getSnowflakeNextId());
             passenger.setCreateTime(now);
             passenger.setUpdateTime(now);
             passengerMapper.insert(passenger);
+        } else {
+            passenger.setUpdateTime(now);
+            passengerMapper.updateByPrimaryKey(passenger);
         }
         //todo 增加身份证正则校验
     }
-
-    private Passenger getPassenger(Long passengerId) {
+    public Passenger getPassenger(Passenger passenger){
         PassengerExample passengerExample = new PassengerExample();
-        passengerExample.createCriteria().andIdEqualTo(passengerId);
+        passengerExample.createCriteria()
+                .andMemberIdEqualTo(passenger.getMemberId())
+                .andIdCardEqualTo(passenger.getIdCard())
+                .andNameEqualTo(passenger.getName());
         List<Passenger> passengers = passengerMapper.selectByExample(passengerExample);
-        return passengers.get(0);
-    }
+        if (passengers == null){
+            throw new BusinessException(BusinessExceptionEnum.MEMBER_MOBILE_EXIST);
+        }
+        try{
+            return passengers.get(0);
+        }catch (Exception ignored){
 
+        }
+        return null;
+    }
 
 }
