@@ -18,3 +18,12 @@ spring:
         uri: http://localhost:8003
         predicates:
           - Path=/batch/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+        # 解决options请求被拦截的问题
+        add-to-simple-url-handler-mapping: true
