@@ -9,6 +9,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.wyq.trainBusiness.domain.entity.DailyTrain;
 import com.wyq.trainBusiness.domain.entity.DailyTrainExample;
+import com.wyq.trainBusiness.domain.entity.DailyTrainTicketExample;
 import com.wyq.trainBusiness.domain.entity.Train;
 import com.wyq.trainBusiness.domain.request.DailyTrainQueryReq;
 import com.wyq.trainBusiness.domain.request.DailyTrainSaveReq;
@@ -35,6 +36,18 @@ public class DailyTrainService {
 
     @Resource
     private TrainService trainService;
+
+    @Resource
+    private DailyTrainStationService dailyTrainStationService;
+
+    @Resource
+    private DailyTrainCarriageService dailyTrainCarriageService;
+
+    @Resource
+    private DailyTrainSeatService dailyTrainSeatService;
+
+    @Resource
+    private DailyTrainTicketService dailyTrainTicketService;
 
 
 
@@ -119,6 +132,16 @@ public class DailyTrainService {
         dailyTrain.setDate(date);
         dailyTrainMapper.insert(dailyTrain);
 
+        // 生成该车次的车站数据
+        dailyTrainStationService.genDaily(date, train.getCode());
+
+        // 生成该车次的车厢数据
+        dailyTrainCarriageService.genDaily(date, train.getCode());
+
+        // 生成该车次的座位数据
+        dailyTrainSeatService.genDaily(date, train.getCode());
+
+        dailyTrainTicketService.genDaily(dailyTrain,date, train.getCode());
 
         LOG.info("生成日期【{}】车次【{}】的信息结束", DateUtil.formatDate(date), train.getCode());
     }

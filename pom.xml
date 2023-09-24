@@ -21,6 +21,7 @@
         <module>train-generator</module>
         <module>train-business</module>
         <module>train-batch</module>
+        <module>train-once</module>
     </modules>
     <properties>
         <java.version>17</java.version>

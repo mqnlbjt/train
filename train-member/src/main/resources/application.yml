@@ -10,6 +10,9 @@ spring:
     password: wyq
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  application:
+    name: member
+
   data:
     redis:
       database: 1
