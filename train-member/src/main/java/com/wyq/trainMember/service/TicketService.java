@@ -2,12 +2,15 @@ package com.wyq.trainMember.service;
 
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.ObjUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.wyq.trainCommon.response.PageResp;
+import com.wyq.trainCommon.utils.SnowUtil;
 import com.wyq.trainMember.domain.entity.Ticket;
 import com.wyq.trainMember.domain.entity.TicketExample;
+import com.wyq.trainCommon.request.MemberTicketReq;
 import com.wyq.trainMember.domain.request.TicketQueryReq;
 import com.wyq.trainMember.domain.response.TicketQueryResp;
 import com.wyq.trainMember.mapper.TicketMapper;
@@ -31,19 +34,19 @@ public class TicketService {
      *
      * @param req
      */
-//    public void save(MemberTicketReq req) throws Exception {
-//        // LOG.info("seata全局事务ID save: {}", RootContext.getXID());
-//        DateTime now = DateTime.now();
-//        Ticket ticket = BeanUtil.copyProperties(req, Ticket.class);
-//        ticket.setId(SnowUtil.getSnowflakeNextId());
-//        ticket.setCreateTime(now);
-//        ticket.setUpdateTime(now);
-//        ticketMapper.insert(ticket);
-//        // 模拟被调用方出现异常
-//        // if (1 == 1) {
-//        //     throw new Exception("测试异常11");
-//        // }
-//    }
+    public void save(MemberTicketReq req) throws Exception {
+        // LOG.info("seata全局事务ID save: {}", RootContext.getXID());
+        DateTime now = DateTime.now();
+        Ticket ticket = BeanUtil.copyProperties(req, Ticket.class);
+        ticket.setId(SnowUtil.getSnowflakeNextId());
+        ticket.setCreateTime(now);
+        ticket.setUpdateTime(now);
+        ticketMapper.insert(ticket);
+        // 模拟被调用方出现异常
+        // if (1 == 1) {
+        //     throw new Exception("测试异常11");
+        // }
+    }
 
     public PageResp<TicketQueryResp> queryList(TicketQueryReq req) {
         TicketExample ticketExample = new TicketExample();

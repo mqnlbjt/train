@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.env.Environment;
@@ -14,6 +15,7 @@ import org.springframework.core.env.Environment;
 @MapperScan("com.wyq.trainMember.mapper")
 @ComponentScan(basePackages = {"com.wyq",
         "com.wyq.trainCommon"})
+@EnableDiscoveryClient
 public class memberApplication {
     private static final Logger LOG = LoggerFactory.getLogger(memberApplication.class);
 

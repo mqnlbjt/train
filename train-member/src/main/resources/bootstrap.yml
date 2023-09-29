@@ -1,0 +1,16 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: member
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: http://localhost:8848
+        namespace: df9107bd-4e50-42a8-ba6e-cb35f7f00769
+      config:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: df9107bd-4e50-42a8-ba6e-cb35f7f00769
+server:
+  port: 8001

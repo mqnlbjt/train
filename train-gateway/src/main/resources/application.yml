@@ -9,15 +9,15 @@ spring:
     gateway:
       routes:
       - id: member
-        uri: http://localhost:8001
+        uri: lb://member
         predicates:
           - Path=/member/**
       - id: business
-        uri: http://localhost:8002
+        uri: lb://business
         predicates:
           - Path=/business/**
       - id: batch
-        uri: http://localhost:8003
+        uri: lb://batch
         predicates:
           - Path=/batch/**
       globalcors:

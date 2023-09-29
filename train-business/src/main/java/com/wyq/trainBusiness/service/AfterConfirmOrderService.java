@@ -3,9 +3,14 @@ package com.wyq.trainBusiness.service;
 import com.wyq.trainBusiness.domain.entity.ConfirmOrder;
 import com.wyq.trainBusiness.domain.entity.DailyTrainSeat;
 import com.wyq.trainBusiness.domain.entity.DailyTrainTicket;
+import com.wyq.trainBusiness.domain.enums.ConfirmOrderStatusEnum;
 import com.wyq.trainBusiness.domain.request.ConfirmOrderTicketReq;
+import com.wyq.trainBusiness.feign.MemberFeign;
 import com.wyq.trainBusiness.mapper.ConfirmOrderMapper;
 import com.wyq.trainBusiness.mapper.DailyTrainSeatMapper;
+import com.wyq.trainBusiness.mapper.cust.DailyTrainTicketMapperCust;
+import com.wyq.trainCommon.request.MemberTicketReq;
+import com.wyq.trainCommon.response.CommonResp;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +26,103 @@ public class AfterConfirmOrderService {
 
     @Resource
     private DailyTrainSeatMapper dailyTrainSeatMapper;
+    @Resource
+    private DailyTrainTicketMapperCust dailyTrainTicketMapperCust;
+    @Resource
+    private MemberFeign memberFeign;
+
+    @Resource
+    private ConfirmOrderMapper confirmOrderMapper;
 
 
-    @Transactional
-    public void afterDoConfirm(List<DailyTrainSeat> finalSeatList){
-        for (DailyTrainSeat dailyTrainSeat: finalSeatList){
+    public void afterDoConfirm(DailyTrainTicket dailyTrainTicket, List<DailyTrainSeat> finalSeatList, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder) throws Exception {
+        // LOG.info("seata全局事务ID: {}", RootContext.getXID());
+        for (int j = 0; j < finalSeatList.size(); j++) {
+            DailyTrainSeat dailyTrainSeat = finalSeatList.get(j);
             DailyTrainSeat seatForUpdate = new DailyTrainSeat();
             seatForUpdate.setId(dailyTrainSeat.getId());
             seatForUpdate.setSell(dailyTrainSeat.getSell());
-            seatForUpdate.setDate(new Date());
+            seatForUpdate.setUpdateTime(new Date());
             dailyTrainSeatMapper.updateByPrimaryKeySelective(seatForUpdate);
+
+            // 计算这个站卖出去后，影响了哪些站的余票库存
+            // 参照2-3节 如何保证不超卖、不少卖，还要能承受极高的并发 10:30左右
+            // 影响的库存：本次选座之前没卖过票的，和本次购买的区间有交集的区间
+            // 假设10个站，本次买4~7站
+            // 原售：001000001
+            // 购买：000011100
+            // 新售：001011101
+            // 影响：XXX11111X
+            // Integer startIndex = 4;
+            // Integer endIndex = 7;
+            // Integer minStartIndex = startIndex - 往前碰到的最后一个0;
+            // Integer maxStartIndex = endIndex - 1;
+            // Integer minEndIndex = startIndex + 1;
+            // Integer maxEndIndex = endIndex + 往后碰到的最后一个0;
+            Integer startIndex = dailyTrainTicket.getStartIndex();
+            Integer endIndex = dailyTrainTicket.getEndIndex();
+            char[] chars = seatForUpdate.getSell().toCharArray();
+            Integer maxStartIndex = endIndex - 1;
+            Integer minEndIndex = startIndex + 1;
+            Integer minStartIndex = 0;
+            for (int i = startIndex - 1; i >= 0; i--) {
+                char aChar = chars[i];
+                if (aChar == '1') {
+                    minStartIndex = i + 1;
+                    break;
+                }
+            }
+            LOG.info("影响出发站区间：" + minStartIndex + "-" + maxStartIndex);
+
+            Integer maxEndIndex = seatForUpdate.getSell().length();
+            for (int i = endIndex; i < seatForUpdate.getSell().length(); i++) {
+                char aChar = chars[i];
+                if (aChar == '1') {
+                    maxEndIndex = i;
+                    break;
+                }
+            }
+            LOG.info("影响到达站区间：" + minEndIndex + "-" + maxEndIndex);
+
+            dailyTrainTicketMapperCust.updateCountBySell(
+                    dailyTrainSeat.getDate(),
+                    dailyTrainSeat.getTrainCode(),
+                    dailyTrainSeat.getSeatType(),
+                    minStartIndex,
+                    maxStartIndex,
+                    minEndIndex,
+                    maxEndIndex);
+
+            // 调用会员服务接口，为会员增加一张车票
+            MemberTicketReq memberTicketReq = new MemberTicketReq();
+            memberTicketReq.setMemberId(confirmOrder.getMemberId());
+            memberTicketReq.setPassengerId(tickets.get(j).getPassengerId());
+            memberTicketReq.setPassengerName(tickets.get(j).getPassengerName());
+            memberTicketReq.setTrainDate(dailyTrainTicket.getDate());
+            memberTicketReq.setTrainCode(dailyTrainTicket.getTrainCode());
+            memberTicketReq.setCarriageIndex(dailyTrainSeat.getCarriageIndex());
+            memberTicketReq.setSeatRow(dailyTrainSeat.getRow());
+            memberTicketReq.setSeatCol(dailyTrainSeat.getCol());
+            memberTicketReq.setStartStation(dailyTrainTicket.getStart());
+            memberTicketReq.setStartTime(dailyTrainTicket.getStartTime());
+            memberTicketReq.setEndStation(dailyTrainTicket.getEnd());
+            memberTicketReq.setEndTime(dailyTrainTicket.getEndTime());
+            memberTicketReq.setSeatType(dailyTrainSeat.getSeatType());
+            CommonResp<Object> commonResp = memberFeign.save(memberTicketReq);
+            LOG.info("调用member接口，返回：{}", commonResp);
+
+            // 更新订单状态为成功
+            ConfirmOrder confirmOrderForUpdate = new ConfirmOrder();
+            confirmOrderForUpdate.setId(confirmOrder.getId());
+            confirmOrderForUpdate.setUpdateTime(new Date());
+            confirmOrderForUpdate.setStatus(ConfirmOrderStatusEnum.SUCCESS.getCode());
+            confirmOrderMapper.updateByPrimaryKeySelective(confirmOrderForUpdate);
+
+            // 模拟调用方出现异常
+            // Thread.sleep(10000);
+            // if (1 == 1) {
+            //     throw new Exception("测试异常");
+            // }
         }
     }
 }

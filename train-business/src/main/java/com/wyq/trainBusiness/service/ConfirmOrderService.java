@@ -184,7 +184,12 @@ public class ConfirmOrderService {
 
         LOG.info("最终的选座是{}" , finalSeatList);
         //使用事务控制多张表 修改座位表的sell字段 1111 -> 0000
-        afterConfirmOrderService.afterDoConfirm(finalSeatList);
+        try {
+            afterConfirmOrderService.afterDoConfirm(dailyTrainTicket, finalSeatList, tickets, confirmOrder);
+        } catch (Exception e) {
+            LOG.error("保存购票信息失败", e);
+            throw new BusinessException(BusinessExceptionEnum.CONFIRM_ORDER_EXCEPTION);
+        }
         //余票表修改余票
 
         //增加买票记录
