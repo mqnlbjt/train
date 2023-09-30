@@ -11,6 +11,7 @@ import com.wyq.trainBusiness.mapper.DailyTrainSeatMapper;
 import com.wyq.trainBusiness.mapper.cust.DailyTrainTicketMapperCust;
 import com.wyq.trainCommon.request.MemberTicketReq;
 import com.wyq.trainCommon.response.CommonResp;
+import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ public class AfterConfirmOrderService {
     private ConfirmOrderMapper confirmOrderMapper;
 
 
+    @GlobalTransactional
     public void afterDoConfirm(DailyTrainTicket dailyTrainTicket, List<DailyTrainSeat> finalSeatList, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder) throws Exception {
         // LOG.info("seata全局事务ID: {}", RootContext.getXID());
         for (int j = 0; j < finalSeatList.size(); j++) {
