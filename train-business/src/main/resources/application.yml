@@ -2,7 +2,12 @@ server:
   port: 8002
   servlet:
     context-path: /business
-
+  tomcat:
+    connection-timeout: 1000
+    threads:
+      max: 1000
+    accept-count: 1000
+    max-connections: 1000
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/12306?characterEncoding=UTF8&autoReconnect=true&serverTimezone=Asia/Shanghai
@@ -11,11 +16,16 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   application:
     name: business
-#  data:
-#    redis:
-#      database: 1
-#      host: localhost
-#      port: 6379
+  data:
+    redis:
+      database: 2
+      host: localhost
+      port: 6379
+  cloud:
+    sentinel:
+      transport:
+        port: 8719
+        dashboard: localhost:8080
 
 mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
