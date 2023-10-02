@@ -29,11 +29,13 @@ import com.wyq.trainCommon.utils.SnowUtil;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ConfirmOrderService {
@@ -54,6 +56,9 @@ public class ConfirmOrderService {
 
     @Resource
     private AfterConfirmOrderService afterConfirmOrderService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
 
     public void save(ConfirmOrderDoReq req) {
@@ -103,9 +108,14 @@ public class ConfirmOrderService {
         return BeanUtil.copyToList(confirmOrderList, ConfirmOrderQueryResp.class);
     }
 
-    public synchronized List<StationQueryResp> doConfirm(ConfirmOrderDoReq req) {
+    public List<StationQueryResp> doConfirm(ConfirmOrderDoReq req) {
         //todo 校验票务信息 车次是否存在 余票是否存在 车次有效期 票数大于0 客户是否购买过本次列车(应该需要一个提醒 前端)
 
+        String Key = req.getDate() + ":" + req.getTrainCode();
+        Boolean ifAbsent = stringRedisTemplate.opsForValue().setIfAbsent(Key, "1", 5, TimeUnit.SECONDS);
+        if (Boolean.FALSE.equals(ifAbsent)) {
+            throw new BusinessException(BusinessExceptionEnum.CONFIRM_ORDER_LOCK_FAIL);
+        }
         //保存到订单表
         DateTime now = DateTime.now();
         ConfirmOrder confirmOrder = new ConfirmOrder();
@@ -182,7 +192,7 @@ public class ConfirmOrderService {
             }
         }
 
-        LOG.info("最终的选座是{}" , finalSeatList);
+        LOG.info("最终的选座是{}", finalSeatList);
         //使用事务控制多张表 修改座位表的sell字段 1111 -> 0000
         try {
             afterConfirmOrderService.afterDoConfirm(dailyTrainTicket, finalSeatList, tickets, confirmOrder);
@@ -190,11 +200,8 @@ public class ConfirmOrderService {
             LOG.error("保存购票信息失败", e);
             throw new BusinessException(BusinessExceptionEnum.CONFIRM_ORDER_EXCEPTION);
         }
-        //余票表修改余票
+        stringRedisTemplate.delete(Key);
 
-        //增加买票记录
-
-        //确认订单成功
         return null;
     }
 
@@ -216,7 +223,7 @@ public class ConfirmOrderService {
 
                 // 判断当前座位不能被选中过
                 boolean alreadyChooseFlag = false;
-                for (DailyTrainSeat finalSeat : finalSeatList){
+                for (DailyTrainSeat finalSeat : finalSeatList) {
                     if (finalSeat.getId().equals(dailyTrainSeat.getId())) {
                         alreadyChooseFlag = true;
                         break;
@@ -293,10 +300,10 @@ public class ConfirmOrderService {
     private boolean calSell(DailyTrainSeat dailyTrainSeat, Integer startIndex, Integer endIndex) {
         String sell = dailyTrainSeat.getSell();
         String sellPart = sell.substring(startIndex, endIndex);
-        if (Integer.parseInt(sellPart) > 0){
+        if (Integer.parseInt(sellPart) > 0) {
             LOG.info("座位{}在本次车站区间{}~{}已售过票，不可选中该座位", dailyTrainSeat.getCarriageSeatIndex(), startIndex, endIndex);
             return false;
-        }else {
+        } else {
             LOG.info("座位{}在本次车站区间{}~{}未售过票，可选中该座位", dailyTrainSeat.getCarriageSeatIndex(), startIndex, endIndex);
             LOG.info("座位{}在本次车站区间{}~{}未售过票，可选中该座位", dailyTrainSeat.getCarriageSeatIndex(), startIndex, endIndex);
             //  111,   111
