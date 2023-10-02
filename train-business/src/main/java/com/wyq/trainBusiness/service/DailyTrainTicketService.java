@@ -193,7 +193,7 @@ public class DailyTrainTicketService {
 
     }
 
-    public DailyTrainTicket selectByUnique(Date date, String trainCode, String start, String end) {
+    public synchronized DailyTrainTicket selectByUnique(Date date, String trainCode, String start, String end) {
         DailyTrainTicketExample dailyTrainTicketExample = new DailyTrainTicketExample();
         dailyTrainTicketExample.createCriteria()
                 .andDateEqualTo(date)

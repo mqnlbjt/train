@@ -14,3 +14,10 @@ spring:
         namespace: df9107bd-4e50-42a8-ba6e-cb35f7f00769
 server:
   port: 8003
+seata:
+  tx-service-group: train-group
+  service:
+    vgroup-mapping:
+      train-group: default
+    grouplist:
+      default: localhost:8091

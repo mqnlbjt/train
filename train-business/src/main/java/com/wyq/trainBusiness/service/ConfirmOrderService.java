@@ -103,7 +103,7 @@ public class ConfirmOrderService {
         return BeanUtil.copyToList(confirmOrderList, ConfirmOrderQueryResp.class);
     }
 
-    public List<StationQueryResp> doConfirm(ConfirmOrderDoReq req) {
+    public synchronized List<StationQueryResp> doConfirm(ConfirmOrderDoReq req) {
         //todo 校验票务信息 车次是否存在 余票是否存在 车次有效期 票数大于0 客户是否购买过本次列车(应该需要一个提醒 前端)
 
         //保存到订单表
