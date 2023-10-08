@@ -5,6 +5,7 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.wyq.trainBusiness.domain.request.ConfirmOrderDoReq;
 import com.wyq.trainBusiness.domain.response.StationQueryResp;
+import com.wyq.trainBusiness.service.BeforeConfirmOrderService;
 import com.wyq.trainBusiness.service.ConfirmOrderService;
 import com.wyq.trainBusiness.service.StationService;
 import com.wyq.trainCommon.exception.BusinessException;
@@ -28,6 +29,9 @@ public class ConfirmOrderController {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private BeforeConfirmOrderService beforeConfirmOrderService;
+
     @SentinelResource(value = "confirmOrderDo", blockHandler = "doConfirmBlock")
     @PostMapping("/do")
     public CommonResp<Object> doConfirm(@Valid @RequestBody ConfirmOrderDoReq req) {
@@ -47,8 +51,8 @@ public class ConfirmOrderController {
             stringRedisTemplate.delete(imageCodeToken);
         }
 
-        List<StationQueryResp> list = confirmOrderService.doConfirm(req);
-        return new CommonResp<>(list);
+        beforeConfirmOrderService.beforeDoConfirm(req);
+        return new CommonResp<>();
     }
 
 

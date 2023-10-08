@@ -131,21 +131,22 @@ public class ConfirmOrderService {
             }
             //保存到订单表
             DateTime now = DateTime.now();
-            ConfirmOrder confirmOrder = new ConfirmOrder();
-            confirmOrder.setId(SnowUtil.getSnowflakeNextId());
-            confirmOrder.setCreateTime(now);
-            confirmOrder.setUpdateTime(now);
-            confirmOrder.setMemberId(LoginMemberContext.getId());
-            confirmOrder.setDate(req.getDate());
-            confirmOrder.setTrainCode(req.getTrainCode());
-            confirmOrder.setStart(req.getStart());
-            confirmOrder.setEnd(req.getEnd());
-            confirmOrder.setDailyTrainTicketId(req.getDailyTrainTicketId());
-            confirmOrder.setStatus(ConfirmOrderStatusEnum.INIT.getCode());
             List<ConfirmOrderTicketReq> tickets = req.getTickets();
-            confirmOrder.setTickets(JSON.toJSONString(tickets));
-
-            confirmOrderMapper.insert(confirmOrder);
+             ConfirmOrderExample confirmOrderExample = new ConfirmOrderExample();
+             confirmOrderExample.setOrderByClause("id asc");
+             ConfirmOrderExample.Criteria criteria = confirmOrderExample.createCriteria();
+             criteria.andDateEqualTo(req.getDate())
+                     .andTrainCodeEqualTo(req.getTrainCode())
+                     .andStatusEqualTo(ConfirmOrderStatusEnum.INIT.getCode());
+             List<ConfirmOrder> list = confirmOrderMapper.selectByExampleWithBLOBs(confirmOrderExample);
+             ConfirmOrder confirmOrder;
+             if (CollUtil.isEmpty(list)) {
+                 LOG.info("找不到原始订单，结束");
+                 return null;
+             } else {
+                 LOG.info("本次处理{}条确认订单", list.size());
+                 confirmOrder = list.get(0);
+             }
 
             //查询余票记录 得到真实库存 daily-train-ticket
             DailyTrainTicket dailyTrainTicket = dailyTrainTicketService.selectByUnique(req.getDate(), req.getTrainCode(),
